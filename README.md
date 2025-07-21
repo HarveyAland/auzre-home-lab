@@ -83,16 +83,28 @@ To confirm GPO enforcement:
 
 ---
 
+## 🧪 GPO & Admin Lockout Avoidance
+
+While securing GPOs for lockdown, care was taken to **add the `labadmin` account to the local administrators group**. This prevented accidental lockout from the VM during restrictive GPO testing.
+
+---
+
 ## 🔁 Hybrid Identity Sync (Azure AD Connect)
 
-To integrate with Azure:
+To simulate a real-world hybrid identity setup, I configured Microsoft Entra Connect to synchronize a specific organizational unit (OU) from on-premises Active Directory into Azure AD. This approach follows enterprise practices where only selected users — such as IT staff or cloud-enabled roles — are synced to Azure.
 
-1. Added UPN suffix to support Azure sign-in (`harveyaland99outlook.onmicrosoft.com`)
-2. Created a new **OU: Azure Users**
-3. Created user: `az_Harvey.Smith` with UPN kept intentionally different (`az_harveysmith@harveyaland99outlook.onmicrosoft.com`)
-4. Configured **Azure AD Connect** to sync **only this OU**.
+Since the on-prem domain was `corp.local` (non-routable), I added a **new UPN suffix** `harveyaland99outlook.onmicrosoft.com` to support Azure sign-in. This matches the default Azure tenant domain.
 
-> ❗ **Troubleshooting:** On first sync attempt, password sync failed. The sync was reconfigured and restarted.
+To align with how many enterprises segment Azure-integrated users, I created a **dedicated OU named `Azure Users`**, where only select identities would be synchronized. This made testing and permission management easier and avoided syncing unnecessary or system accounts.
+
+I also created a user called `az_Harvey.Smith`, intended to act as the IT administrator for Azure. The UPN was set to `az_harveysmith@harveyaland99outlook.onmicrosoft.com`, slightly adjusted from the AD name to be compliant with Azure formatting (e.g. no underscores in Azure UPNs).
+
+Once the user and OU were ready, I scoped Azure AD Connect to sync **only the `Azure Users` OU** and ran a manual sync.
+
+> ❗ **Troubleshooting:**  
+> On the first sync attempt, the user synced to Azure AD but could not sign in due to a password hash synchronization issue. To resolve this, I restarted the sync service and reconfigured Entra Connect. The issue was resolved on the second sync.
+
+---
 
 **UPN Suffix Addition:**  
 ![](screenshots/adding-the-upn-suffix.png)
@@ -109,14 +121,13 @@ To integrate with Azure:
 **Force Sync (PowerShell):**  
 ![](screenshots/forcing-ad-sync.png)
 
-**Verify Sync in Entra:**  
+**Connecting Local Directory via Sync in Entra:**  
 ![](screenshots/connecting-to-ad-through-azure-entra-connect.png)
 
 **Fixed Password Sync:**  
 ![](screenshots/restarting-ad-entra-sync-as-passwords-didnt-sync.png)
 
 ---
-
 ## 👤 Azure Portal Access (Synced User)
 
 Once synced:
@@ -124,6 +135,10 @@ Once synced:
 - The user was visible in Azure AD.
 - Assigned the `Contributor` role.
 - Logged into the **Azure Portal** successfully.
+- Verified Azure console access for Harvey Smith.
+
+**Azure AD Presence Confirmed:**  
+![](screenshots/azhsmith-now-in-azure-ad-in-console..png)
 
 **Role Assignment:**  
 ![](screenshots/giving-contribute-role-to-azhsmith-user.png)
@@ -131,16 +146,11 @@ Once synced:
 **Login Confirmation:**  
 ![](screenshots/siging-into-azure-with-azhsmith.png)
 
-**Azure AD Presence Confirmed:**  
-![](screenshots/azhsmith-now-in-azure-ad-in-console..png)
+**Azure Access Confirmed:**
+![](screenshots/azhsmith-now-signed-in-to-azure-portal.png)
+
 
 > ✅ **Note**: A custom OU helped enforce separation of synced users. Azure user login was validated and tested end-to-end.
-
----
-
-## 🧪 GPO & Admin Lockout Avoidance
-
-While securing GPOs for lockdown, care was taken to **add the `labadmin` account to the local administrators group**. This prevented accidental lockout from the VM during restrictive GPO testing.
 
 ---
 
